@@ -3,10 +3,10 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:8000/api";
 
-// Fetch quizzes
+
 export const fetchQuizzes = createAsyncThunk("quizzes/fetchQuizzes", async (_, { rejectWithValue, getState }) => {
     try {
-      const token = getState().auth.token; // Get token from Redux store
+      const token = getState().auth.token; 
       const response = await axios.get("http://localhost:8000/api/quizzes", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -21,8 +21,6 @@ export const fetchQuizzes = createAsyncThunk("quizzes/fetchQuizzes", async (_, {
     }
   });
   
-
-// ✅ Define quizzesSlice properly
 const quizzesSlice = createSlice({
   name: "quizzes",
   initialState: {
@@ -30,7 +28,7 @@ const quizzesSlice = createSlice({
     status: "idle",
     error: null,
   },
-  reducers: {}, // ✅ Make sure this object exists, even if empty
+  reducers: {}, 
   extraReducers: (builder) => {
     builder
       .addCase(fetchQuizzes.pending, (state) => {
@@ -48,5 +46,5 @@ const quizzesSlice = createSlice({
   },
 });
 
-// ✅ Export reducer at the end
+
 export default quizzesSlice.reducer;

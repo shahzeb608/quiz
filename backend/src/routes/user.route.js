@@ -5,7 +5,8 @@ import {
   registerUser, 
   loginUser, 
   logoutUser,
-  getCurrentUser 
+  getCurrentUser,
+  checkAuth
 } from '../controllers/user.controller.js';
 
 const router = express.Router();
@@ -13,6 +14,8 @@ const router = express.Router();
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/logout', logoutUser);
-router.get('/me', protect, getCurrentUser); // Add this route
+router.get('/me', protect, getCurrentUser); 
+router.get('/check-auth', protect, checkAuth); 
+// Add this route
 
 export default router;

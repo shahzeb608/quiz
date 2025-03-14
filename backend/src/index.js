@@ -7,6 +7,8 @@ import adminRoutes from "./routes/admin.route.js";
 import quizRoutes from "./routes/quiz.route.js";  
 import leaderboardRoutes from './routes/leaderboard.route.js'
 
+import cookieParser from "cookie-parser";
+app.use(cookieParser()); 
 
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);

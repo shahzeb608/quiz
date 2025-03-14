@@ -1,32 +1,26 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { logoutUser } from "../features/auth/authSlice"; // ✅ Fixed import
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import Logout from "./Logout";
+import "../styles/navbar.css";  
 
 const Navbar = () => {
-  const user = useSelector((state) => state.auth.user);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    dispatch(logoutUser()).then(() => navigate("/login"));
-  };
+  const { user } = useSelector((state) => state.auth);
 
   return (
-    <nav className="bg-blue-500 p-4 text-white flex justify-between items-center">
+    <nav className="navbar">
       <div className="text-xl font-bold">Quiz App</div>
-      <ul className="flex space-x-4">
-        <li><Link to="/" className="hover:underline">Home</Link></li>
-        <li><Link to="/leaderboard" className="hover:underline">Leaderboard</Link></li>
+      <ul>
+        <li><Link to="/">Home</Link></li>
+        <li><Link to="/leaderboard">Leaderboard</Link></li>
+        {user?.role === "admin" && <li><Link to="/admin">Admin Panel</Link></li>}
         {!user ? (
           <>
-            <li><Link to="/signup" className="hover:underline">Sign Up</Link></li>
-            <li><Link to="/login" className="hover:underline">Login</Link></li>
+            <li><Link to="/signup">Sign Up</Link></li>
+            <li><Link to="/login">Login</Link></li>
           </>
         ) : (
-          <li>
-            <button onClick={handleLogout} className="hover:underline">Logout</button>
-          </li>
+          <li><Logout /></li>
         )}
       </ul>
     </nav>

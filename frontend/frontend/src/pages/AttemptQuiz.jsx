@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import "../styles/attempt-quiz.css"; 
 
 const AttemptQuiz = () => {
   const { quizId } = useParams();
@@ -19,26 +20,30 @@ const AttemptQuiz = () => {
       try {
         const response = await axios.get(
           `http://localhost:8000/api/quizzes/${quizId}`,
-          { 
-            withCredentials: true,
-            timeout: 10000 // Add timeout
-          }
+          { withCredentials: true }
         );
         setQuiz(response.data.data);
+        setTimeLeft(response.data.data.duration * 60);
       } catch (err) {
-        if(err.response?.status === 401) {
-          navigate("/login");
+        console.error("Error fetching quiz:", err);
+        
+        if (err.response?.status === 401) {
+          navigate("/login", { state: { from: `/quiz/${quizId}/attempt` } });
         } else {
-          setError("Failed to load quiz");
+          setError("Failed to load quiz: " + (err.response?.data?.message || err.message));
         }
       } finally {
         setLoading(false);
       }
     };
-  
-    if (user) fetchQuiz()
+
+    if (user) {
+      fetchQuiz();
+    } else {
+      navigate("/login", { state: { from: `/quiz/${quizId}/attempt` } });
+    }
   }, [quizId, user, navigate]);
-  
+
   useEffect(() => {
     if (timeLeft <= 0) return;
 
@@ -81,37 +86,29 @@ const AttemptQuiz = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (loading) return <div>Loading quiz...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (loading) return <div className="loading">Loading quiz...</div>;
+  if (error) return <div className="error">{error}</div>;
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{quiz?.title}</h1>
-        <div className="bg-gray-100 px-4 py-2 rounded-lg">
-          Time Remaining: {formatTime(timeLeft)}
-        </div>
+    <div className="attempt-quiz-container">
+      <div className="quiz-header">
+        <h1>{quiz?.title}</h1>
+        <div className="timer">Time Remaining: {formatTime(timeLeft)}</div>
       </div>
 
       {quiz?.questions.map((question, index) => (
-        <div key={question._id} className="mb-8 p-4 bg-white rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">
-            Question {index + 1}: {question.questionText}
-          </h3>
+        <div key={question._id} className="question-card">
+          <h3 className="question-text">Question {index + 1}: {question.questionText}</h3>
           
-          <div className="grid gap-3">
+          <div className="options">
             {question.options.map((option, optIndex) => (
-              <label 
-                key={optIndex}
-                className="flex items-center space-x-3 p-3 border rounded hover:bg-gray-50"
-              >
+              <label key={optIndex} className="option-label">
                 <input
                   type="radio"
                   name={question._id}
                   value={option}
                   checked={answers[question._id] === option}
                   onChange={() => handleSelectAnswer(question._id, option)}
-                  className="h-4 w-4"
                 />
                 <span>{option}</span>
               </label>
@@ -120,20 +117,11 @@ const AttemptQuiz = () => {
         </div>
       ))}
 
-      <button
-        onClick={handleSubmitQuiz}
-        className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-      >
+      <button onClick={handleSubmitQuiz} className="submit-btn">
         Submit Quiz
       </button>
 
-      {score !== null && (
-        <div className="mt-6 p-4 bg-green-100 rounded-lg text-center">
-          <h3 className="text-xl font-semibold">
-            Your Score: {score}/{quiz?.questions.length}
-          </h3>
-        </div>
-      )}
+      {score !== null && <div className="score-container">Your Score: {score}/{quiz?.questions.length}</div>}
     </div>
   );
 };

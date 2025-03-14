@@ -3,25 +3,25 @@ import axios from 'axios';
 
 const API_BASE_URL = "http://localhost:8000/api/admin";
 
-// Fetch all users
+
 export const fetchUsers = createAsyncThunk('users/fetchUsers', async () => {
   const response = await axios.get(`${API_BASE_URL}/users`);
   return response.data;
 });
 
-// Ban user
+
 export const banUser = createAsyncThunk('users/banUser', async (userId) => {
   await axios.patch(`/api/users/${userId}/ban`);
-  return userId; // Return ID to update state
+  return userId; 
 });
 
-// Unban user
+
 export const unbanUser = createAsyncThunk('users/unbanUser', async (userId) => {
   await axios.patch(`/api/users/${userId}/unban`);
-  return userId; // Return ID to update state
+  return userId; 
 });
 
-// Delete user
+
 export const deleteUser = createAsyncThunk('users/deleteUser', async (userId) => {
   await axios.delete(`/api/users/${userId}`);
   return userId; 

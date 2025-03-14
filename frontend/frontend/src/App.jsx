@@ -24,20 +24,24 @@ const App = () => {
     <Router>
       <Navbar />
       <main className="container mx-auto px-4 py-8">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/quiz/:quizId" element={<QuizDetails />} />
-          
-          <Route element={<PrivateRoute />}>
-            <Route path="/quiz/:quizId/attempt" element={<AttemptQuiz />} />
-            <Route path="/admin" element={<AdminPanel />} />
-          </Route>
+      <Routes>
+  <Route path="/" element={<Home />} />
+  <Route path="/leaderboard" element={<Leaderboard />} />
+  <Route path="/quiz/:quizId" element={<QuizDetails />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/signup" element={<Signup />} />
+  <Route path="/admin-login" element={<AdminLogin />} />
+  
+  
+  <Route element={<PrivateRoute />}>
+    <Route path="/quiz/:quizId/attempt" element={<AttemptQuiz />} />
+  </Route>
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
-        </Routes>
+  
+  <Route element={<PrivateRoute adminOnly={true} />}>
+    <Route path="/admin" element={<AdminPanel />} />
+  </Route>
+</Routes>
       </main>
     </Router>
   );

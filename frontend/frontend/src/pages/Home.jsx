@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { fetchQuizzes } from '../features/quizzes/quizzesSlice';
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { fetchQuizzes } from "../features/quizzes/quizzesSlice";
+import "../styles/home.css"; 
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -18,21 +19,21 @@ const Home = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Available Quizzes</h1>
-      
-      {status === 'loading' ? (
-        <div className="text-center">Loading quizzes...</div>
+    <div className="home-container">
+      <h1 className="home-title">Available Quizzes</h1>
+
+      {status === "loading" ? (
+        <div className="loading">Loading quizzes...</div>
       ) : (
-        <div className="grid gap-6">
+        <div className="quiz-grid">
           {quizzes.map((quiz) => (
             <div
               key={quiz._id}
               onClick={() => handleQuizClick(quiz._id)}
-              className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+              className="quiz-card"
             >
-              <h2 className="text-xl font-semibold mb-2">{quiz.title}</h2>
-              <div className="flex justify-between text-gray-600">
+              <h2 className="quiz-title">{quiz.title}</h2>
+              <div className="quiz-info">
                 <span>{quiz.questions.length} questions</span>
                 <span>{quiz.duration} minutes</span>
               </div>

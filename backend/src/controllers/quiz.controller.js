@@ -1,5 +1,5 @@
 import { Quiz } from '../models/quiz.model.js';
-import { User } from '../models/user.model.js'; // Import the User model
+import { User } from '../models/user.model.js'; 
 import { Leaderboard } from '../models/leaderboard.model.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -23,7 +23,7 @@ export const getQuizById = asyncHandler(async (req, res) => {
 export const submitQuiz = asyncHandler(async (req, res) => {
   const { quizId } = req.params;
   const { answers } = req.body;
-  const userId = req.user._id; // Use authenticated user's ID
+  const userId = req.user._id; 
 
   const quiz = await Quiz.findById(quizId);
   if (!quiz) {
@@ -37,7 +37,7 @@ export const submitQuiz = asyncHandler(async (req, res) => {
     }
   });
 
-  // Save the user's attempt to their profile
+  
   await User.findByIdAndUpdate(userId, {
     $push: {
       quizzesTaken: {
@@ -48,9 +48,9 @@ export const submitQuiz = asyncHandler(async (req, res) => {
     },
   });
 
-  // Save the attempt to the Leaderboard collection
+  
   await Leaderboard.create({
-    user: userId, // Store the user reference
+    user: userId, 
     quizId: quiz._id,
     score,
     attemptedAt: new Date(),

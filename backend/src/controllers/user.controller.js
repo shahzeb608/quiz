@@ -15,22 +15,23 @@ const generateAccessAndRefreshTokens = async (userId) => {
   return { accessToken, refreshToken };
 };
 
-const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
-  if (!username || !email || !password) {
-    throw new ApiError(400, "All fields are required");
+ const registerUser = asyncHandler(async (req, res) => {
+  const { email, password, username } = req.body;
+
+  
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    throw new ApiError(400, "Email already exists");
   }
 
-  const existedUser = await User.findOne({ email });
-  if (existedUser) throw new ApiError(409, "Email already exists");
+  
+  const user = await User.create({ email, password, username });
 
-  const user = await User.create({ username, email, password });
-  const createdUser = await User.findById(user._id).select("-password -refreshToken");
-  if (!createdUser) throw new ApiError(500, "Registration failed");
-
-  res
-    .status(201)
-    .json(new ApiResponse(201, createdUser, "User registered successfully"));
+  res.status(201).json({
+    _id: user._id,
+    email: user.email,
+    username: user.username,
+  });
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -65,39 +66,32 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     res.json(new ApiResponse(200, req.user, "Current user fetched successfully"));
   });
 
-// controllers/user.controller.js
-const logoutUser = asyncHandler(async (req, res) => {
-    try {
-      // Get user from token if possible, but don't require it
-      const token = req.cookies.accessToken;
-      if (token) {
-        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-        await User.findByIdAndUpdate(decoded._id, 
-          { $unset: { refreshToken: 1 } }
-        );
+
+   const logoutUser = asyncHandler(async (req, res) => {
+    res
+      .clearCookie("accessToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      })
+      .clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      })
+      .json(new ApiResponse(200, null, "Logged out successfully"));
+  });
+ 
+
+
+export const checkAuth = asyncHandler(async (req, res) => {
+    
+    res.json(new ApiResponse(200, {
+      user: {
+        _id: req.user._id,
+        email: req.user.email,
+        role: req.user.role
       }
-  
-      res
-        .status(200)
-        .clearCookie("accessToken", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-        })
-        .clearCookie("refreshToken", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-        })
-        .json({ success: true, message: "Logged out successfully" });
-  
-    } catch (error) {
-      // Force clear cookies even on error
-      res
-        .clearCookie("accessToken")
-        .clearCookie("refreshToken")
-        .status(500)
-        .json({ success: false, message: "Logout completed with errors" });
-    }
+    }, "User authenticated"));
   });
 export { registerUser, loginUser, logoutUser,getCurrentUser };

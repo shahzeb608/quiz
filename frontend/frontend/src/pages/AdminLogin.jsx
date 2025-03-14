@@ -1,36 +1,39 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
-import { adminLogIn } from "../features/auth/authSlice"; // Import the new adminLogIn thunk
+import { useNavigate } from "react-router-dom";
+import { adminLogIn } from "../features/auth/authSlice";
 import AuthForm from "../components/AuthForm";
+import "../styles/admin-login.css";  
 
 const AdminLogin = () => {
   const [error, setError] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleLogin = async (credentials) => {
-    console.log("Dispatching adminLogIn...");
-    const result = await dispatch(adminLogIn(credentials));
-    console.log("Login result:", result);
-
-    if (result.payload) {
-      if (result.payload.user.role === "admin") {
-        const redirectPath = location.state?.from || "/admin";
-        navigate(redirectPath, { replace: true });
+    try {
+      const result = await dispatch(adminLogIn(credentials)).unwrap();
+      
+      console.log("Admin login result:", result);
+      
+      if (result && result.user && result.user.role === "admin") {
+        if (result.token) {
+          localStorage.setItem("authToken", result.token);
+        }
+        navigate("/admin");
       } else {
-        setError("You are not authorized as an admin.");
+        setError("Admin privileges required");
       }
-    } else {
-      setError(result.error ? result.error.message : "Login failed");
+    } catch (error) {
+      console.error("Admin login error:", error);
+      setError(typeof error === 'string' ? error : "Login failed");
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <h2 className="text-2xl font-bold mb-4">Admin Login</h2>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+    <div className="admin-login">
+      <h2>Admin Login</h2>
+      {error && <p>{error}</p>}
       <AuthForm isSignup={false} onSubmit={handleLogin} />
     </div>
   );

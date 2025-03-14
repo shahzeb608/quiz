@@ -9,7 +9,7 @@ const AdminPanel = () => {
   const [quizTitle, setQuizTitle] = useState("");
   const [duration, setDuration] = useState("");
   const [questions, setQuestions] = useState([{ questionText: "", options: ["", ""], correctAnswer: "" }]);
-  const [editingQuiz, setEditingQuiz] = useState(null); // For updating quizzes
+  const [editingQuiz, setEditingQuiz] = useState(null); 
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,7 +45,7 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ Ban & Unban User
+  
   const toggleUserBan = async (userId, isBanned) => {
     try {
       await axios.put(
@@ -59,7 +59,7 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ Delete User
+  
   const deleteUser = async (userId) => {
     try {
       await axios.delete(`http://localhost:8000/api/admin/users/${userId}`, {
@@ -71,7 +71,7 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ Add or Update Quiz
+  
   const saveQuiz = async () => {
     if (!quizTitle || !duration || questions.length === 0) {
       setError("Please fill all fields.");
@@ -87,14 +87,14 @@ const AdminPanel = () => {
 
     try {
       if (editingQuiz) {
-        // Update Quiz
+        
         await axios.put(
           `http://localhost:8000/api/admin/quizzes/${editingQuiz._id}`,
           { title: quizTitle, questions, duration },
           { headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } }
         );
       } else {
-        // Add New Quiz
+        
         await axios.post(
           "http://localhost:8000/api/admin/quizzes",
           { title: quizTitle, questions, duration },
@@ -109,7 +109,7 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ Delete Quiz
+  
   const deleteQuiz = async (quizId) => {
     try {
       await axios.delete(`http://localhost:8000/api/admin/quizzes/${quizId}`, {
@@ -121,7 +121,7 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ Edit Quiz
+  
   const editQuiz = (quiz) => {
     setEditingQuiz(quiz);
     setQuizTitle(quiz.title);
@@ -129,7 +129,7 @@ const AdminPanel = () => {
     setQuestions(quiz.questions);
   };
 
-  // ✅ Reset Form
+  
   const resetForm = () => {
     setEditingQuiz(null);
     setQuizTitle("");
@@ -141,7 +141,7 @@ const AdminPanel = () => {
     <div>
       <h1>Admin Panel - User & Quiz Management</h1>
 
-      {/* User Management */}
+      
       <h2>Users</h2>
       {users.length === 0 ? <p>No users available.</p> : (
         <ul>
@@ -157,7 +157,7 @@ const AdminPanel = () => {
         </ul>
       )}
 
-      {/* Quiz Management */}
+      
       <h2>{editingQuiz ? "Edit Quiz" : "Create Quiz"}</h2>
       <input type="text" placeholder="Quiz Title" value={quizTitle} onChange={(e) => setQuizTitle(e.target.value)} />
       <input type="number" placeholder="Duration (minutes)" value={duration} onChange={(e) => setDuration(e.target.value)} />

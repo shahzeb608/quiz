@@ -1,38 +1,59 @@
+
 import jwt from "jsonwebtoken";
-import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
+import { User } from "../models/user.model.js";
 
-// middlewares/auth.middleware.js
+
 export const protect = asyncHandler(async (req, res, next) => {
   try {
-    const token = req.cookies.accessToken;
+    let token;
+    
+    
+    if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
+      console.log("Found token in cookies");
+    } 
+    
+    else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+      token = req.headers.authorization.split(" ")[1];
+      console.log("Found token in Authorization header");
+    }
+    
     if (!token) {
+      console.log("No token found");
       throw new ApiError(401, "Not authenticated");
     }
-
+    
+    
+    console.log("Verifying token:", token.substring(0, 10) + "...");
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const user = await User.findById(decoded._id)
-      .select("username email role"); // Include username and other necessary fields
-
+    console.log("Decoded token:", decoded);
+    
+    
+    const user = await User.findById(decoded._id || decoded.id).select("-password");
     if (!user) {
-      res.clearCookie("accessToken");
-      res.clearCookie("refreshToken");
+      console.log("User not found for ID:", decoded._id || decoded.id);
       throw new ApiError(404, "User not found");
     }
-
+    
+    console.log("User authenticated:", user.email);
     req.user = user;
     next();
   } catch (error) {
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-    next(error);
+    console.error("Authentication error:", error.message);
+    throw new ApiError(401, "Authentication failed: " + error.message);
   }
 });
-
-export const isAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== "admin") {
-    throw new ApiError(403, "Access Denied - Admins Only");
+export const hasRole = (roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    throw new ApiError(403, `Access Denied - Requires one of: ${roles.join(', ')}`);
   }
   next();
 };
+
+
+export const isAdmin = hasRole(['admin']);
+
+
+export const isAdminOrModerator = hasRole(['admin', 'moderator']);

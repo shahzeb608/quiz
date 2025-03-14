@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import "../styles/quiz-details.css";  
 
 const QuizDetails = () => {
   const { quizId } = useParams();
@@ -30,35 +31,32 @@ const QuizDetails = () => {
   }, [quizId]);
 
   const handleAttemptQuiz = () => {
-    if (!user) {
-      navigate("/login", { state: { from: `/quiz/${quizId}/attempt` } });
-    } else {
+    if (user) {
       navigate(`/quiz/${quizId}/attempt`);
+    } else {
+      navigate("/login", { state: { from: `/quiz/${quizId}/attempt` } });
     }
   };
 
-  if (loading) return <div className="text-center py-8">Loading quiz details...</div>;
-  if (error) return <div className="text-red-500 text-center py-8">{error}</div>;
-  if (!quiz) return <div className="text-center py-8">Quiz not found</div>;
+  if (loading) return <div className="loading">Loading quiz details...</div>;
+  if (error) return <div className="error">{error}</div>;
+  if (!quiz) return <div className="loading">Quiz not found</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold mb-4">{quiz.title}</h1>
-        <p className="text-gray-600 mb-6">{quiz.description}</p>
+    <div className="quiz-details-container">
+      <div className="quiz-card">
+        <h1 className="quiz-title">{quiz.title}</h1>
+        <p className="quiz-description">{quiz.description}</p>
         
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Quiz Details:</h3>
-          <ul className="list-disc pl-6">
+        <div className="quiz-info">
+          <h3>Quiz Details:</h3>
+          <ul>
             <li>Number of Questions: {quiz.questions.length}</li>
             <li>Duration: {quiz.duration} minutes</li>
           </ul>
         </div>
 
-        <button
-          onClick={handleAttemptQuiz}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
+        <button onClick={handleAttemptQuiz} className="start-quiz-btn">
           Start Quiz
         </button>
       </div>
