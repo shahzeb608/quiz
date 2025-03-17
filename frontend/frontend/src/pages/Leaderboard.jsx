@@ -32,13 +32,16 @@ const Leaderboard = () => {
             </thead>
             <tbody>
               {entries.map((entry, index) => (
+               
                 <tr key={entry._id}>
                   <td>{index + 1}</td>
-                  <td>{entry.username}</td>
+                  {console.log(entry.username)}
+                  <td>{entry.user?.username || "Unknown User"}</td>
                   <td>{entry.quizId?.title || 'Unknown Quiz'}</td>
                   <td>{entry.score}</td>
                   <td>{new Date(entry.attemptedAt).toLocaleDateString()}</td>
                 </tr>
+
               ))}
             </tbody>
           </table>

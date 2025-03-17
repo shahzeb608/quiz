@@ -3,50 +3,106 @@ import axios from 'axios';
 
 const API_BASE_URL = "http://localhost:8000/api/admin";
 
-
-export const fetchUsers = createAsyncThunk('users/fetchUsers', async () => {
-  const response = await axios.get(`${API_BASE_URL}/users`);
-  return response.data;
+// Fetch all users
+export const fetchUsers = createAsyncThunk('users/fetchUsers', async (_, { rejectWithValue }) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/users`, {
+      withCredentials: true
+    });
+    console.log("Users response:", response.data);
+    return response.data.data || response.data;
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return rejectWithValue(error.response?.data?.message || "Failed to fetch users");
+  }
 });
 
-
-export const banUser = createAsyncThunk('users/banUser', async (userId) => {
-  await axios.patch(`/api/users/${userId}/ban`);
-  return userId; 
+// Ban a user
+export const banUser = createAsyncThunk('users/banUser', async (userId, { rejectWithValue }) => {
+  try {
+    const response = await axios.patch(`${API_BASE_URL}/users/${userId}/ban`, {}, {
+      withCredentials: true
+    });
+    return { userId, data: response.data };
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || "Failed to ban user");
+  }
 });
 
-
-export const unbanUser = createAsyncThunk('users/unbanUser', async (userId) => {
-  await axios.patch(`/api/users/${userId}/unban`);
-  return userId; 
+// Unban a user
+export const unbanUser = createAsyncThunk('users/unbanUser', async (userId, { rejectWithValue }) => {
+  try {
+    const response = await axios.patch(`${API_BASE_URL}/users/${userId}/unban`, {}, {
+      withCredentials: true
+    });
+    return { userId, data: response.data };
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || "Failed to unban user");
+  }
 });
 
-
-export const deleteUser = createAsyncThunk('users/deleteUser', async (userId) => {
-  await axios.delete(`/api/users/${userId}`);
-  return userId; 
+// Delete a user
+export const deleteUser = createAsyncThunk('users/deleteUser', async (userId, { rejectWithValue }) => {
+  try {
+    await axios.delete(`${API_BASE_URL}/users/${userId}`, {
+      withCredentials: true
+    });
+    return userId;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || "Failed to delete user");
+  }
 });
 
 const usersSlice = createSlice({
   name: 'users',
-  initialState: { list: [], status: 'idle', error: null },
+  initialState: { 
+    list: [], 
+    status: 'idle', 
+    error: null 
+  },
+  reducers: {
+    clearUsersError: (state) => {
+      state.error = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
+      // Fetch Users
+      .addCase(fetchUsers.pending, (state) => {
+        state.status = 'loading';
+      })
       .addCase(fetchUsers.fulfilled, (state, action) => {
+        state.status = 'succeeded';
         state.list = action.payload;
+        state.error = null;
       })
+      .addCase(fetchUsers.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Failed to fetch users';
+      })
+      
+      // Ban User
       .addCase(banUser.fulfilled, (state, action) => {
-        const user = state.list.find((u) => u.id === action.payload);
-        if (user) user.banned = true;
+        const user = state.list.find(u => u._id === action.payload.userId);
+        if (user) {
+          user.isBanned = true;
+        }
       })
+      
+      // Unban User
       .addCase(unbanUser.fulfilled, (state, action) => {
-        const user = state.list.find((u) => u.id === action.payload);
-        if (user) user.banned = false;
+        const user = state.list.find(u => u._id === action.payload.userId);
+        if (user) {
+          user.isBanned = false;
+        }
       })
+      
+      // Delete User
       .addCase(deleteUser.fulfilled, (state, action) => {
-        state.list = state.list.filter((u) => u.id !== action.payload);
+        state.list = state.list.filter(u => u._id !== action.payload);
       });
   },
 });
 
+export const { clearUsersError } = usersSlice.actions;
 export default usersSlice.reducer;

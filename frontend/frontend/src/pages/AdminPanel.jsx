@@ -1,208 +1,216 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUsers } from "../features/users/usersSlice";
+import { fetchQuizzes } from "../features/quizzes/quizzesSlice";
 import axios from "axios";
 
 const AdminPanel = () => {
-  const [users, setUsers] = useState([]);
-  const [quizzes, setQuizzes] = useState([]);
-  const [error, setError] = useState(null);
-  const [quizTitle, setQuizTitle] = useState("");
-  const [duration, setDuration] = useState("");
-  const [questions, setQuestions] = useState([{ questionText: "", options: ["", ""], correctAnswer: "" }]);
-  const [editingQuiz, setEditingQuiz] = useState(null); 
-  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { list: users, status: usersStatus } = useSelector((state) => state.users);
+  const { quizzes, status: quizzesStatus } = useSelector((state) => state.quizzes);
+  const [activeTab, setActiveTab] = useState("users");
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch dashboard stats
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      navigate("/admin-login");
-      return;
-    }
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get("http://localhost:8000/api/admin/dashboard", {
+          withCredentials: true
+        });
+        setDashboardStats(response.data.data);
+      } catch (error) {
+        console.error("Error fetching dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    fetchUsers();
-    fetchQuizzes();
+    fetchDashboard();
   }, []);
 
-  const fetchUsers = async () => {
+  // Fetch users and quizzes
+  useEffect(() => {
+    console.log("Dispatching fetchUsers and fetchQuizzes");
+    dispatch(fetchUsers());
+    dispatch(fetchQuizzes());
+  }, [dispatch]);
+
+  // Debug logs
+  useEffect(() => {
+    console.log("Users in state:", users);
+    console.log("Quizzes in state:", quizzes);
+  }, [users, quizzes]);
+
+  const handleBanUser = async (userId) => {
     try {
-      const response = await axios.get("http://localhost:8000/api/admin/users", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      await axios.patch(`http://localhost:8000/api/admin/users/${userId}/ban`, {}, {
+        withCredentials: true
       });
-      setUsers(response.data);
-    } catch (err) {
-      setError(err.response?.data?.message || "Unauthorized");
+      dispatch(fetchUsers()); // Refresh user list
+    } catch (error) {
+      console.error("Error banning user:", error);
     }
   };
 
-  const fetchQuizzes = async () => {
+  const handleUnbanUser = async (userId) => {
     try {
-      const response = await axios.get("http://localhost:8000/api/admin/quizzes", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      await axios.patch(`http://localhost:8000/api/admin/users/${userId}/unban`, {}, {
+        withCredentials: true
       });
-      setQuizzes(response.data);
-    } catch (err) {
-      setError(err.response?.data?.message || "Error fetching quizzes");
-    }
-  };
-
-  
-  const toggleUserBan = async (userId, isBanned) => {
-    try {
-      await axios.put(
-        `http://localhost:8000/api/admin/users/${userId}/ban`,
-        { banned: !isBanned },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } }
-      );
-      fetchUsers();
+      dispatch(fetchUsers()); // Refresh user list
     } catch (error) {
-      setError("Failed to update user status.");
+      console.error("Error unbanning user:", error);
     }
   };
 
-  
-  const deleteUser = async (userId) => {
-    try {
-      await axios.delete(`http://localhost:8000/api/admin/users/${userId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
-      });
-      setUsers(users.filter((user) => user._id !== userId));
-    } catch (error) {
-      setError("Failed to delete user.");
-    }
-  };
-
-  
-  const saveQuiz = async () => {
-    if (!quizTitle || !duration || questions.length === 0) {
-      setError("Please fill all fields.");
-      return;
-    }
-
-    for (const q of questions) {
-      if (!q.questionText || q.options.length < 2 || !q.correctAnswer) {
-        setError("Each question must have text, at least two options, and a correct answer.");
-        return;
-      }
-    }
-
-    try {
-      if (editingQuiz) {
-        
-        await axios.put(
-          `http://localhost:8000/api/admin/quizzes/${editingQuiz._id}`,
-          { title: quizTitle, questions, duration },
-          { headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } }
-        );
-      } else {
-        
-        await axios.post(
-          "http://localhost:8000/api/admin/quizzes",
-          { title: quizTitle, questions, duration },
-          { headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } }
-        );
-      }
-
-      fetchQuizzes();
-      resetForm();
-    } catch (error) {
-      setError("Failed to save quiz.");
-    }
-  };
-
-  
-  const deleteQuiz = async (quizId) => {
+  const handleDeleteQuiz = async (quizId) => {
     try {
       await axios.delete(`http://localhost:8000/api/admin/quizzes/${quizId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+        withCredentials: true
       });
-      setQuizzes(quizzes.filter((quiz) => quiz._id !== quizId));
+      dispatch(fetchQuizzes()); // Refresh quiz list
     } catch (error) {
-      setError("Failed to delete quiz.");
+      console.error("Error deleting quiz:", error);
     }
   };
 
-  
-  const editQuiz = (quiz) => {
-    setEditingQuiz(quiz);
-    setQuizTitle(quiz.title);
-    setDuration(quiz.duration);
-    setQuestions(quiz.questions);
-  };
-
-  
-  const resetForm = () => {
-    setEditingQuiz(null);
-    setQuizTitle("");
-    setDuration("");
-    setQuestions([{ questionText: "", options: ["", ""], correctAnswer: "" }]);
-  };
+  if (loading && !dashboardStats) {
+    return <div className="admin-loading">Loading dashboard...</div>;
+  }
 
   return (
-    <div>
-      <h1>Admin Panel - User & Quiz Management</h1>
+    <div className="admin-panel">
+      <h1>Admin Dashboard</h1>
 
-      
-      <h2>Users</h2>
-      {users.length === 0 ? <p>No users available.</p> : (
-        <ul>
-          {users.map((user) => (
-            <li key={user._id}>
-              {user.email} - {user.banned ? "Banned" : "Active"}
-              <button onClick={() => toggleUserBan(user._id, user.banned)}>
-                {user.banned ? "Unban" : "Ban"}
-              </button>
-              <button onClick={() => deleteUser(user._id)}>Delete</button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      
-      <h2>{editingQuiz ? "Edit Quiz" : "Create Quiz"}</h2>
-      <input type="text" placeholder="Quiz Title" value={quizTitle} onChange={(e) => setQuizTitle(e.target.value)} />
-      <input type="number" placeholder="Duration (minutes)" value={duration} onChange={(e) => setDuration(e.target.value)} />
-
-      {questions.map((question, qIndex) => (
-        <div key={qIndex} className="mb-4">
-          <input type="text" placeholder={`Question ${qIndex + 1}`} value={question.questionText} onChange={(e) => {
-            const newQuestions = [...questions];
-            newQuestions[qIndex].questionText = e.target.value;
-            setQuestions(newQuestions);
-          }} />
-
-          {question.options.map((option, optIndex) => (
-            <input key={optIndex} type="text" placeholder={`Option ${optIndex + 1}`} value={option} onChange={(e) => {
-              const newQuestions = [...questions];
-              newQuestions[qIndex].options[optIndex] = e.target.value;
-              setQuestions(newQuestions);
-            }} />
-          ))}
-
-          <input type="text" placeholder="Correct Answer" value={question.correctAnswer} onChange={(e) => {
-            const newQuestions = [...questions];
-            newQuestions[qIndex].correctAnswer = e.target.value;
-            setQuestions(newQuestions);
-          }} />
+      {dashboardStats && (
+        <div className="dashboard-stats">
+          <div className="stat-card">
+            <h3>Total Users</h3>
+            <p>{dashboardStats.totalUsers || 0}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Total Quizzes</h3>
+            <p>{dashboardStats.totalQuizzes || 0}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Quiz Attempts</h3>
+            <p>{dashboardStats.totalAttempts || 0}</p>
+          </div>
         </div>
-      ))}
-
-      <button onClick={saveQuiz}>{editingQuiz ? "Update Quiz" : "Create Quiz"}</button>
-      <button onClick={resetForm} disabled={!editingQuiz}>Cancel Edit</button>
-
-      <h2>Existing Quizzes</h2>
-      {quizzes.length === 0 ? <p>No quizzes available.</p> : (
-        <ul>
-          {quizzes.map((quiz) => (
-            <li key={quiz._id}>
-              {quiz.title} - {quiz.duration} min
-              <button onClick={() => editQuiz(quiz)}>Edit</button>
-              <button onClick={() => deleteQuiz(quiz._id)}>Delete</button>
-            </li>
-          ))}
-        </ul>
       )}
 
-      {error && <p className="text-red-500">{error}</p>}
+      <div className="admin-tabs">
+        <button
+          className={activeTab === "users" ? "active" : ""}
+          onClick={() => setActiveTab("users")}
+        >
+          Users
+        </button>
+        <button
+          className={activeTab === "quizzes" ? "active" : ""}
+          onClick={() => setActiveTab("quizzes")}
+        >
+          Quizzes
+        </button>
+      </div>
+
+      {activeTab === "users" && (
+        <div className="users-section">
+          <h2>User Management</h2>
+          {usersStatus === "loading" ? (
+            <p>Loading users...</p>
+          ) : users && users.length > 0 ? (
+            <table className="users-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user._id}>
+                    <td>{user.username}</td>
+                    <td>{user.email}</td>
+                    <td>{user.role}</td>
+                    <td>{user.isBanned ? "Banned" : "Active"}</td>
+                    <td>
+                      {user.isBanned ? (
+                        <button
+                          className="unban-btn"
+                          onClick={() => handleUnbanUser(user._id)}
+                        >
+                          Unban
+                        </button>
+                      ) : (
+                        <button
+                          className="ban-btn"
+                          onClick={() => handleBanUser(user._id)}
+                        >
+                          Ban
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No users found. {JSON.stringify(users)}</p>
+          )}
+        </div>
+      )}
+
+      {activeTab === "quizzes" && (
+        <div className="quizzes-section">
+          <h2>Quiz Management</h2>
+          {quizzesStatus === "loading" ? (
+            <p>Loading quizzes...</p>
+          ) : quizzes && quizzes.length > 0 ? (
+            <table className="quizzes-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Questions</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quizzes.map((quiz) => (
+                  <tr key={quiz._id}>
+                    <td>{quiz.title}</td>
+                    <td>{quiz.category}</td>
+                    <td>{quiz.questions?.length || 0}</td>
+                    <td>
+                      <button
+                        className="edit-btn"
+                        onClick={() => console.log("Edit quiz", quiz._id)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDeleteQuiz(quiz._id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No quizzes found. {JSON.stringify(quizzes)}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -41,19 +41,14 @@ const logIn = createAsyncThunk(
   }
 );
 
+
 const adminLogIn = createAsyncThunk(
   'auth/adminLogIn',
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${ADMIN_API_BASE}/login`, credentials, {
-        withCredentials: true
+        withCredentials: true 
       });
-      
-      
-      if (response.data && response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
-      }
-      
       return response.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Admin login failed';
@@ -84,16 +79,14 @@ const checkAuth = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${USER_API_BASE}/check-auth`, {
-        withCredentials: true
+        withCredentials: true 
       });
-      
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Authentication failed');
     }
   }
 );
-
 const initialState = {
   user: null,
   status: 'idle',

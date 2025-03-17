@@ -32,13 +32,14 @@ export const adminLogin = asyncHandler(async (req, res) => {
   const token = jwt.sign({ id: user._id, role: user.role }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1d" });
 
   
-  const isProduction = process.env.NODE_ENV === "production";
-  res.cookie("accessToken", token, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: "Strict",
-    maxAge: 24 * 60 * 60 * 1000, 
-  });
+  
+const isProduction = process.env.NODE_ENV === "production";
+res.cookie("accessToken", token, {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "None" : "Lax", 
+  maxAge: 24 * 60 * 60 * 1000,
+});
 
   logger.info("Admin logged in:", user.email);
   res.json({

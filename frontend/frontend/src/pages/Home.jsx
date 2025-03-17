@@ -1,45 +1,39 @@
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { fetchQuizzes } from "../features/quizzes/quizzesSlice";
-import "../styles/home.css"; 
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchPublicQuizzes } from '../features/quizzes/quizzesSlice'; // Use fetchPublicQuizzes for the home page
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items: quizzes, status } = useSelector((state) => state.quizzes);
-  const { user } = useSelector((state) => state.auth);
+  const quizzes = useSelector((state) => state.quizzes.publicQuizzes || []); 
+  const user = useSelector((state) => state.auth.user);
 
   useEffect(() => {
-    dispatch(fetchQuizzes());
+    dispatch(fetchPublicQuizzes()); 
   }, [dispatch]);
 
   const handleQuizClick = (quizId) => {
-    navigate(`/quiz/${quizId}`);
+    if (user) {
+      navigate(`/quiz/${quizId}/details`); 
+    } else {
+      navigate('/login', { state: { from: `/quiz/${quizId}/details` } }); 
+    }
   };
-
+  
   return (
-    <div className="home-container">
-      <h1 className="home-title">Available Quizzes</h1>
-
-      {status === "loading" ? (
-        <div className="loading">Loading quizzes...</div>
+    <div>
+      <h1>All Quizzes</h1>
+      {quizzes.length === 0 ? (
+        <p>No quizzes available</p>
       ) : (
-        <div className="quiz-grid">
+        <ul>
           {quizzes.map((quiz) => (
-            <div
-              key={quiz._id}
-              onClick={() => handleQuizClick(quiz._id)}
-              className="quiz-card"
-            >
-              <h2 className="quiz-title">{quiz.title}</h2>
-              <div className="quiz-info">
-                <span>{quiz.questions.length} questions</span>
-                <span>{quiz.duration} minutes</span>
-              </div>
-            </div>
+            <li key={quiz._id} onClick={() => handleQuizClick(quiz._id)}>
+              {quiz.title}
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

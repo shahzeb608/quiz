@@ -16,6 +16,6 @@ router.post('/login', loginUser);
 router.post('/logout', logoutUser);
 router.get('/me', protect, getCurrentUser); 
 router.get('/check-auth', protect, checkAuth); 
-// Add this route
+
 
 export default router;
